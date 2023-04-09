@@ -47,7 +47,7 @@ post '/login' do
 
     #check existence & match
     if @user && @user.password == password
-        session[:user_id] = @user_id
+        session[:user_id] = @user.id
         redirect to('/') 
         
     else
@@ -61,3 +61,59 @@ get '/logout' do
     redirect to('/')
 end
 
+get '/finstagram_posts/new' do
+    @finstagram_post = FinstagramPost.new
+    erb(:"finstagram_posts/new")
+end
+
+post '/finstagram_posts' do
+    photo_url = params[:photo_url]
+
+    # instantiate new FinstagramPost
+    @finstagram_post = FinstagramPost.new({ photo_url: photo_url, user_id: current_user.id })
+
+    # if @post validates, save
+    if @finstagram_post.save
+        redirect(to('/'))
+    else
+        # if it doesn't validate, print error messages
+        erb(:"finstagram_posts/new")
+    end
+end
+
+get '/finstagram_posts/:id' do
+    @finstagram_post = FinstagramPost.find(params[:id])   # finds post with the ID from URL
+    #escape_html @finstagram_post.inspect 
+    erb(:"finstagram_posts/show")  # render app/views/finstagram_posts/show.erb
+        
+end
+
+post '/comments' do
+    # point values from params to variables
+    text = params[:text]
+    finstagram_post_id = params[:finstagram_post_id]
+
+    # instantiate a comment with those values & assign the comment to the `current_user`
+    comment = Comment.new({ text: text, finstagram_post_id: finstagram_post_id, user_id: current_user.id })
+
+    # save the comment
+    comment.save
+
+    # `redirect` back to wherever we came from
+    redirect(back)
+end
+
+post '/likes' do
+    finstagram_post_id = params[:finstagram_post_id]
+
+    like = Like.new({ finstagram_post_id: finstagram_post_id, user_id: current_user.id })
+    like.save
+
+    redirect(back)
+end
+
+delete '/likes/:id' do
+    like = Like.find(params[:id])
+    like.destroy
+    redirect(back)
+end
